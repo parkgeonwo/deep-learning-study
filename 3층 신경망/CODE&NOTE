@@ -1,0 +1,962 @@
+■ 3층 신경망
+
+"저자가 만들어온 가중치를 신경망에 셋팅해서 필기체 데이터를 인식하는 3층 신경망 생성하는 단원"
+
+3장에서는 신경망에 뉴런에 들어가는 함수(기능)들 소개하고 있습니다.
+
+	1. 활성화 함수
+			- 계단함수
+			- 시그모이드 함수
+			- 렐루 함수
+			- 하이퍼볼릭 탄젠트
+	2. 출력층 함수
+			- 항등함수 ( 회귀 분석 )
+			- 소프트맥스 함수 ( 분류 )
+	3. 오차함수
+			- 평균 제곱 오차 함수( 회귀분석 )
+			- 크로스 엔트로피(cross entropy) 오차함수 (분류)
+
+
+
+
+▩ 계단함수
+
+"숫자 0과 1을 리턴하는 함수"
+
+입력값 x <= 0      --------------------> 0을 리턴
+입력값 x > 0        --------------------> 1을 리턴
+
+예제 :
+def step_function(x):
+    if x >= 0:
+        return 1
+    else:
+        return 0
+
+x_data = np.array([ -1,0,1 ])
+print( step_function(x_data) )    # 이거는 에러납니다.
+print( step_function( 3.0 ) )        # 1
+
+※ 설명 : 위에서 만든 step_function 함수는 배열을 넣을 수 없다. 
+		사진은 다차원 배열로 인식한다.
+		
+### numpy 배열을 넣을 수 있도록 step_function 함수를 다시 생성하시오 ! ( p69 )
+
+답: 
+def step_function(x):
+    y = x > 0
+    print(y)
+    return y.astype(np.int)
+
+step_function(np.array(3.0))
+
+※ 설명 : true 를 np.int로 변환하면 1이 출력되고 false를 np.int 로 변환하면 0이 출력됩니다.
+		신경망에서 흘러가는 모든 데이터는 numpy array 형태의 다차원 배열이므로 신경망내에서
+		쓰여질 활성화 함수도 numpy array 형태의 데이터를 받아서 처리할 수 있도록 생성되어져야
+		합니다.
+
+### 위에서 만든 step_function 함수를 책 71페이지의 나온것처럼 시각화 하시오
+
+그림 3-6
+
+
+import matplotlib.pylab as plt
+import numpy as np
+
+def step_function(x):
+    y = x > 0
+    # print(y)
+    return y.astype(np.int)
+
+x = np.arange(-5,5,0.1)       # -5부터 5까지 0.1 간격으로 숫자를 출력해라
+y = step_function(x)
+
+plt.plot(x,y)
+plt.ylim(-0.1, 1.1)
+plt.show()
+
+### 시그모이드 함수를 파이썬으로 구현하시오 ! (p72)
+
+시그모이드 함수 공식 : 
+
+
+
+
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+    
+### 시그모이드 함수를 시각화하시오 ( p73 )
+
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+
+x = np.arange(-5,5,0.1)       # -5부터 5까지 0.1 간격으로 숫자를 출력해라
+y = sigmoid(x)
+
+plt.plot(x,y)
+plt.ylim(-0.1, 1.1)
+plt.show()
+
+
+
+### 활성화 함수인 하이퍼볼릭 탄젠트 함수를 생성하시오 !
+
+import math
+
+def tanh(x):
+    return list( map( lambda x:math.tanh(x), x ) )
+
+x = np.arange(-5,5,0.1)       # -5부터 5까지 0.1 간격으로 숫자를 출력해라
+y = tanh(x)
+
+plt.plot(x,y)
+plt.ylim(-1.1, 1.1)
+plt.show()
+
+
+
+※ 설명 : sigmoid 함수는 0~1 사이의 실수를 출력하는 것이고 탄젠트 함수는 -1 ~ 1 사이의 실수를 출력
+
+▩ Relu 함수 ( Rectified Linear Unit )
+					   ↓                ↓
+					정류된
+
+정류는 전기회로쪽 용어입니다. 그림 3-9 처럼 x 가 0 이하일때는 차단하여 아무것도
+출력하지 않고 0보다 큰 값은 그 값을 그대로 출력합니다.
+
+
+
+
+
+### relu 함수를 파이썬으로 생성하시오 ( p77 )
+
+답 :
+import numpy as np
+
+def relu(x):
+    return np.maximum(0,x)             # 0과 x 값 중에서 큰값을 출력한다.
+
+print( relu(-2) )
+print( relu(0.3) )
+
+### relu 를 그래프로 시각화 하시오 !
+
+def relu(x):
+    return np.maximum(0,x)             # 0과 x 값 중에서 큰값을 출력한다.
+
+x = np.arange(-5,5,0.1)       # -5부터 5까지 0.1 간격으로 숫자를 출력해라
+y = relu(x)
+
+plt.plot(x,y)
+plt.ylim(-0.1, 5)
+plt.show()
+
+■ 다차원 배열 (p77)
+
+신경망에 들어가는 데이터는 다차원 배열입니다.
+다차원 배열이 신경망에 들어가서 행렬 계산을 하기 때문에 다차원 배열에 대한 이해가 있어야 합니다.
+사진도 다차원 배열, 동영상도 다차원 배열로 입력이 됩니다.
+
+예제 1. 1차원 배열 만들기
+
+import numpy as np
+a = np.array([1,2,3,4])
+print( np.ndim(a) )        # 차원을 확인할 수 있습니다.
+
+### 위의 a 1차원 배열에서 숫자 4를 출력하시오 !
+
+a = np.array([1,2,3,4])
+print(a[3])
+
+### 아래의 그림 3x2 행렬을 만들고 차원을 확인하시오 ! ( 그림 3-10 )
+
+
+a = np.array([1,2,3,4,5,6]).reshape(3,2)
+print(a)
+print( np.ndim(a) )
+
+### 아래의 3차원 배열을 생성하시오 !
+
+c = np.array([ [ [1,2] , [3,4] ] , [ [5,6], [7,8]  ] ])
+print(c)
+print(np.ndim(c))
+
+### 위의 3차원 배열을 reshape 를 이용해서 편하게 만드시오 !
+
+c = np.array([ 1,2,3,4,5,6,7,8 ]).reshape(2,2,2)
+print(c)
+print(np.ndim(c))
+
+### 위의 3차원 배열에서 숫자 5를 출력하시오 !
+
+print(c[1,0,0])           # 2번째 행의 1행 1열
+print( c[1][0][0] )
+
+▩ 행렬의 내적 (행렬곱) p 79
+
+그림 3-11
+
+
+
+	1. 첫번째 방법
+
+import numpy  as np
+
+x = np.array([1,2,3,4]).reshape(2,2)
+y = np.array([5,6,7,8]).reshape(2,2)
+print( np.dot(x,y) )
+
+	2. 두번째 방법
+
+import numpy  as np
+
+x = np.array([1,2,3,4]).reshape(2,2)
+y = np.array([5,6,7,8]).reshape(2,2)
+print( x @ y )
+
+	3. 세번째 방법
+
+x = np.matrix([[1,2] , [3,4] ])
+y = np.matrix([[5,6] , [7,8]])
+print( x * y )
+
+※ array와 matrix 의 기능 차이 ?
+	
+	array 는 다차원으로 나타낼 수 있는데 matrix 는 2차원 밖에 안됩니다.
+
+※ 행렬곱 (내적) 시 주의사항
+
+	그림 3-12
+
+
+
+다차원 배열을 곱하려면 두 행렬의 대응하는 차원의 원소수를 일치 시켜야합니다.
+
+### 아래 그림 3-14 의 결과값 y 행렬을 출력하시오 !
+
+
+
+x = np.array([1,2]).reshape(1,2)
+w = np.array([1,3,5,2,4,6]).reshape(2,3)
+
+print( np.dot(x,w) )
+
+
+▩ 3층 신경망 구현하기 ( p83 )
+
+그림 3-15
+
+
+def sigmoid(x):
+    return 1 / ( 1+np.exp(-x) )
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+w1 = np.array([1,3,5,2,4,6]).reshape(2,3)
+y = np.dot(x,w1)
+y_hat = sigmoid(y)
+print(y_hat)
+
+### 입력층 ----> 은닉 1층 ----> 은닉 2층 까지 구현하시오 ~
+
+
+
+def sigmoid(x):
+    return 1 / ( 1+np.exp(-x) )
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+w1 = np.array([1,3,5,2,4,6]).reshape(2,3)
+y = np.dot(x,w1)
+y_hat = sigmoid(y)
+
+# 은닉층 ( 2층 )
+
+w2 = np.array([3,4,5,6,7,8]).reshape(3,2)
+z = np.dot(y_hat, w2)
+z_hat = sigmoid(z)
+print(z_hat)
+
+### 입력층 ----> 은닉 1층 ----> 은닉 2층 ----> 출력층까지 구현
+
+
+
+def sigmoid(x):
+    return 1 / ( 1+np.exp(-x) )
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+w1 = np.array([1,3,5,2,4,6]).reshape(2,3)
+y = np.dot(x,w1)
+y_hat = sigmoid(y)
+
+# 은닉층 ( 2층 )
+
+w2 = np.array([3,4,5,6,7,8]).reshape(3,2)
+z = np.dot(y_hat, w2)
+z_hat = sigmoid(z)
+
+# 출력층
+
+w3 = np.array([4,5,6,7]).reshape(2,2)
+k = np.dot(z_hat,w3)
+print(k)
+
+### 3층 신경망의 활성화 함수를 relu로 변경하고 결과를 출력
+
+
+
+import numpy as np
+
+def relu(x):
+    return np.maximum(0,x)
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+w1 = np.array([1,3,5,2,4,6]).reshape(2,3)
+y = np.dot(x,w1)
+y_hat = relu(y)
+
+# 은닉층 ( 2층 )
+
+w2 = np.array([3,4,5,6,7,8]).reshape(3,2)
+z = np.dot(y_hat, w2)
+z_hat = relu(z)
+
+# 출력층
+
+w3 = np.array([4,5,6,7]).reshape(2,2)
+k = np.dot(z_hat,w3)
+print(k)               # [[ 2088 2499 ]]
+
+
+
+■ 출력층 설계하기 
+
+"출력층의 함수는 그동안 흘러왔던 숫자를 취합해서 결론을 내줘야하는 함수"
+
+신경망으로 구현하고자 하는것 ?
+
+	1. 주가예측(회귀) ?                     출력층의 함수를 항등함수를 써야합니다.
+													↓
+								입력값을 받아서 그대로 출력하는 함수
+
+
+항등함수의 예 :
+
+def identity_func(x):
+    return x
+
+
+
+	2. 정상품과 불량품 분류 (분류) ?      출력층의 함수를 소프트맥스 함수를 사용해야합니다.
+														↓
+										입력값을 받아서 확률벡터로 출력하는 함수
+										
+										[0.8 , 0.2]
+										   0       1
+										
+
+
+▩ 출력층 함수인 소프트 맥스 함수 생성 
+
+식 3-10
+
+
+
+위의 식을 파이썬으로 구현해볼건데 위의 식을 그대로 파이썬 코드로 만들면 에러가 나서 구현이 안됩니다.
+왜냐하면 지수함수는 쉽게 아주 큰 값을 출력하기 떄문에 컴퓨터는 큰 값을 출력하게 되면 overflow 가 출력되면서 에러가 납니다.
+그래서 위의 수학식을 컴퓨터로 구현할 수 있게 할 수 있도록 아래와 같이 전개해줘야 합니다.
+
+식 3-11
+
+
+소프트맥스 함수의 자연상수의 지수함수는 아주 큰 값을 출력합니다.
+자연상수 e의 10승은 20000이 넘고 e 의 100 승은 숫자 40개가 넘고
+자연상수 e 의 1000승은 무한대를 뜻하는 inf 가 출력됩니다.
+그래서 컴퓨터로 계산을 할 수가 없는것입니다.
+
+예 :
+import numpy as np
+print( np.exp(10) )           # 22066
+print( np.exp(100) )           # 2.6881171418161356e+43
+
+식 3-11 에 나온데로 구현해봅니다.
+
+import numpy as np
+a = np.array( [1010, 1000, 990] )
+print( np.exp(a) )      # [inf inf inf]
+
+a = np.array( [1010, 1000, 990] )
+C = np.max(a)
+minus = a - C                         # 식 3-10 에서의 C' 
+print( np.exp(minus) )
+
+
+*소프트 맥스 함수 만들기
+
+a = np.array([ 1010, 1000, 990 ])
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)
+    return exp_a                   # 분자까지만 표현
+
+print( softmax(a) )
+
+[1.00000000e+00 4.53999298e-05 2.06115362e-09]
+
+분모까지 포함해서 구현하면 ?
+
+a = np.array([ 1010, 1000, 990 ])
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+print( softmax(a) )              #  [9.99954600e-01 4.53978686e-05 2.06106005e-09]
+								아이린                        설현                      수지
+
+###. 위에서 출력된 결과 리스트의 요소를 다 더하면 숫자 1이 맞는지 확인하시오
+
+print( sum(softmax(a)) )       # 1.0
+
+### 위의 결과가 신경망이 예측한 연애인이 아이린, 설현, 수지 중 누구인지 확인하시오 !
+
+result = softmax(a)
+print ( np.argmax(result) )            # 0
+
+※ 설명 : np.argmax 함수는 ? numpy 리스트의 요소중 가장 큰값의 인덱스 번호를 출력하는 함수
+
+### 어제 마지막 문제로 만들었던 3층 신경망 코드의 출력층에 지금만든 소프트 맥스 함수를
+		넣어서 결과를 출력하는데 출력 변수명은 k_hat으로 하시오
+
+import numpy as np
+
+def relu(x):
+    return np.maximum(0,x)
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+w1 = np.array([1,3,5,2,4,6]).reshape(2,3)
+y = np.dot(x,w1)
+y_hat = relu(y)
+
+# 은닉층 ( 2층 )
+
+w2 = np.array([3,4,5,6,7,8]).reshape(3,2)
+z = np.dot(y_hat, w2)
+z_hat = relu(z)
+
+# 출력층
+
+w3 = np.array([4,5,6,7]).reshape(2,2)
+k = np.dot(z_hat,w3)
+# print(k)               # [[ 2088 2499 ]]
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+k_hat = softmax(k)
+print(k_hat)              # [[3.19865896e-179 1.00000000e+000]]
+
+### 위에서 출력된 k_hat 요소중 가장 큰 값의 인덱스 번호는 몇번인가 ?
+
+print( np.argmax(k_hat) )       # 1
+
+*아이린과 설현 사진을 분류하는 신경망을 만든다고 하면 신경망 학습을 해서
+최종적으로 얻어내야하는 것은 ? 가중치와 바이어스
+
+*가중치와 바이어스를 쉽게 뽑아내고 관리하려면 딕셔너리를 사용하면 좋다.
+
+*파이썬 자료형 5가지
+
+	1. 문자형
+	2. 숫자형
+	3. 리스트형
+	4. 딕셔너리형
+	5. 튜플형
+
+
+
+3층 신경망의 가중치를 ( w1, w2, w3 ) 행렬을 딕셔너리 형태로 생성합니다.
+
+import numpy as np
+
+def init_network():
+    network = {}                    # 비어있는 딕셔너리 생성
+    network['W1'] = np.array([ [1,3,5] , [2,4,6] ])
+    network['W2'] = np.array([ [3,4] , [5,6], [7,8] ])
+    network['W3'] = np.array([ [4,5], [6,7] ])
+    return network
+
+# 가중치 값 불러오기
+network = init_network()
+w1, w2, w3 = network['W1'], network['W2'], network['W3']
+print(w1)
+print(w2)
+print(w3)
+
+### 소프트맥스 함수까지 포함시킨 3층 신경망의 위에서 만든 가중치를 불러오는
+		init_network 를 추가해서 3층 신경망을 구성하시오 !
+
+
+import numpy as np
+
+def relu(x):
+    return np.maximum(0,x)
+
+def init_network():
+    network = {}                    # 비어있는 딕셔너리 생성
+    network['W1'] = np.array([ [1,3,5] , [2,4,6] ])
+    network['W2'] = np.array([ [3,4] , [5,6], [7,8] ])
+    network['W3'] = np.array([ [4,5], [6,7] ])
+    return network
+
+# 가중치 값 불러오기
+network = init_network()
+w1, w2, w3 = network['W1'], network['W2'], network['W3']
+
+# 입력층 ( 0층 )
+x = np.array([1,2]).reshape(1,2)
+
+# 은닉층 ( 1층 )
+y = np.dot(x,w1)
+y_hat = relu(y)
+
+# 은닉층 ( 2층 )
+z = np.dot(y_hat, w2)
+z_hat = relu(z)
+
+# 출력층
+k = np.dot(z_hat,w3)
+# print(k)               # [[ 2088 2499 ]]
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+k_hat = softmax(k)
+print(k_hat)              # [[3.19865896e-179 1.00000000e+000]]
+
+■ 손글씨 숫자를 인식하는 신경망 만들기 p 96
+
+그림 3-24
+
+
+데이터 설명 : mnist 데이터는 0~9 까지의 숫자 이미지로 구성되어있고
+			  훈련 데이터가 6만장, 테스트 데이터가 1만장으로 구성되어 있습니다.
+			  28x28 크기의 회색조 이미지(1채널) 이며 각 픽셀은 0 ~ 255 까지의 값을 취합니다.
+
+*데이터를 주피터 노트북으로 로드하는 방법
+
+	1. 실습 폴더안에 dataset 이라는 폴더를 복사해서 주피터 노트북의 작업디렉토리에 가져다 둡니다.
+
+C:\Users\YYS        # 나는 c:\users\administrator
+
+	2. 주피터 노트북에서 아래와 같이 코드를 작성합니다.
+
+import sys,os
+sys.path.append(os.pardir)              # 현재 윈도우 os 의 폴더를 인식하기 위해서 지정
+from dataset.mnist import load_mnist       # 필기체 데이터 불러오는 함수 
+
+(x_train, t_train), (x_test, t_test) = load_mnist( flatten = True , normalize = False)
+   ↓         ↓         ↓        ↓
+  훈련      정답      테스트    정답
+
+print(x_train.shape)          # (60000, 784)
+
+※ 설명 : flatten : 입력 이미지를 1차원 배열로 만들지를 정하는 매개변수
+		normalize : 이미지의 픽셀값이 현재 0 ~ 255 사이로 되어져있는데 이 값을
+				     0 ~ 1 사이의 값으로 정규화 할지를 정한다.
+
+28 x 28 = 784 
+				
+print( x_train.shape )            # (60000, 784)
+
+###. 테스트 데이터는 전체 몇장인지 출력하시오 !
+
+print( x_test.shape )         # ( 10000, 784 )
+
+### mnist 데이터를 flatten 시키지 말고 훈련 데이터의 shape 를 출력하시오 !
+
+import sys,os
+sys.path.append(os.pardir)              # 현재 윈도우 os 의 폴더를 인식하기 위해서 지정
+from dataset.mnist import load_mnist       # 필기체 데이터 불러오는 함수 
+
+(x_train, t_train), (x_test, t_test) = load_mnist( flatten = False , normalize = False)
+#    ↓       ↓          ↓       ↓
+#  훈련     정답      테스트    정답
+
+print(x_train.shape)          # (60000,1,28,28)
+					     # (전체장수, 색조, 가로사이즈, 세로사이즈)
+※ 색조 = 1 : 흑백사진
+
+## 훈련 데이터 6만장중에 첫번째 필기체가 숫자가 무엇인지 출력하시오 !
+
+import sys,os
+sys.path.append(os.pardir)              # 현재 윈도우 os 의 폴더를 인식하기 위해서 지정
+from dataset.mnist import load_mnist       # 필기체 데이터 불러오는 함수 
+
+(x_train, t_train), (x_test, t_test) = load_mnist( flatten = False , normalize = False)
+print( t_train[0] )       # 5
+
+## 훈련 데이터 6만장중에 첫번째 필기체 숫자가 5가 맞는지 확인하시오 
+
+import sys,os
+sys.path.append(os.pardir)              # 현재 윈도우 os 의 폴더를 인식하기 위해서 지정
+from dataset.mnist import load_mnist       # 필기체 데이터 불러오는 함수 
+
+(x_train, t_train), (x_test, t_test) = load_mnist( flatten = False , normalize = False)
+print( x_train[0] )      
+
+[[[  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0  0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   3  18  18  18 126   136 175  26 166 255 247 127   0   0   0   0]
+  [  0   0   0   0   0   0   0   0  30  36  94 154 170 253 253 253 253   253 225 172 253 242 195  64   0   0   0   0]
+  [  0   0   0   0   0   0   0  49 238 253 253 253 253 253 253 253 253   251  93  82  82  56  39   0   0   0   0   0]
+  [  0   0   0   0   0   0   0  18 219 253 253 253 253 253 198 182 247   241   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0  80 156 107 253 253 205  11   0  43   154   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0  14   1 154 253  90   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0 139 253 190   2   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0  11 190 253  70   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0  35 241 225 160 108   1   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0  81 240 253 253   119  25   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0  45 186 253   253 150  27   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0  16  93   252 253 187   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   249 253 249  64   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0  46 130 183   253 253 207   2   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0  39 148 229 253 253   253 250 182   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0  24 114 221 253 253 253 253   201  78   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0  23  66 213 253 253 253 253 198  81  2   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0  18 171 219 253 253 253 253 195  80   9   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0  55 172 226 253 253 253 253 244 133  11   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0 136 253 253 253 212 135 132  16   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+  [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]]]
+
+### 텐써플로우를 이용해서 mnist 데이터를 가져오시오 !
+
+from tensorflow.keras.datasets.mnist import load_data
+
+(x_train2, y_train2), (x_test2, y_test2) = load_data('mnist.npz')
+print(x_train2.shape)          # ( 60000, 28,28 )
+
+### mnist 의 첫번째 훈련 데이터를 시각화 하시오 
+
+import matplotlib.pyplot as plt
+
+img = x_train2[0]
+print( img.shape )         # ( 28, 28 )
+
+#  tensorflow 의 내장데이터 시각화
+plt.figure()
+plt.imshow(img)
+
+
+
+
+### 밑바닥 딥러닝 책의 mnist 데이터를 첫번째 훈련데이터 시각화
+
+print( x_train[0].shape )          # (1,28,28), 3차원
+a = x_train[0].reshape(28,28)        # 2차원
+plt.figure
+plt.imshow(a)
+
+### 밑바닥 딥러닝 책의 mnist 데이터의 10번째 훈련 데이터를 시각화 하시오 !
+
+print( x_train[9].shape )          # (1,28,28), 3차원
+a = x_train[9].reshape(28,28)        # 2차원
+plt.figure
+plt.imshow(a)
+
+
+
+■ 저자가 만들어온 가중치 피클(pickle) 파일을 불러오는 방법
+
+저자가 이미 힘들게 mnist 데이터로 신경망을 생성시켜서 만들어온 가중치와 바이어스를 불러오기
+
+예제 1. pickle 파일을 생성하는 예제
+
+import pickle
+a = [0.7, 0.4, 3.5]           # 학습시켜서 만든 가중치 값이라고 하자
+with open("c:\\data\\a.pkl","wb") as f:
+    pickle.dump(a, f)
+
+※
+
+
+예제 2. pickle 파일 a.pkl 을 파이썬으로 불러오는 예제
+
+with open("c:\\data\\a.pkl", "rb") as f:
+    data = pickle.load(f)
+
+print(data)
+
+예제 3. 저자가 만든 피클파일을 파이썬으로 불러오는 예제 (ch03 폴더안에)
+
+sample_weight.pkl 을 복사해서 주피터노트북 작업 디렉토리에 가져다 두세요
+
+with open("sample_weight.pkl", "rb") as f:         # working directory = c:\Users\Administrator
+    data = pickle.load(f)
+
+print(data)
+
+위의 2가지 파일( minst 데이터, pickle 파일 ) 로 3층 신경망을 구성하겠습니다.
+
+예제 4. 저자가 만들어온 pickle 파일을 우리가 만들 신경망에 쉽게 불러올 수 있도록
+		함수를 생성하기
+
+import pickle
+
+def init_network():
+    with open("sample_weight.pkl", "rb") as f:
+        network = pickle.load(f)
+    return network
+
+network = init_network()         # 함수를 실행해서 결과를 network 변수에 담는다.
+print( type(network) )         # <class 'dict'>
+
+딕셔너리는 '키'와 '값'으로 구성된 자료형입니다.
+
+### 위에서 결과로 출력된 network 딕셔너리의 키값들이 뭐가 있는지 출력하시오 !
+
+print( network.keys() )      #  dict_keys(['b2', 'W1', 'b1', 'W2', 'W3', 'b3'])
+
+### 가중치 행렬의 shape 가 각각 어떻게 되는지 확인하시오 !
+
+print( network['W1'].shape )       # ( 784, 50 ) , 은닉 1층
+print( network['W2'].shape )       # ( 50, 100 ), 은닉 2층
+print( network['W3'].shape )       # (100, 10) , 출력층
+
+### 위의 가중치 행렬을 보고 저자가 만들어온 신경망의 구조를 그리시오 !
+
+flatten = False
+flatten = True
+
+		입력층 -------------> 은닉 1층 -------------> 은닉 2층 -----------------> 출력층
+	(60000, 28, 28)
+	(60000, 784)    @    (784, 50)  ----> (60000,50)
+							(60000, 50)  @ (50, 100) ----> (60000,100)        
+												(60000,100) @ (100,10) ---> (60000,10)
+
+### 저자가 만들어온 가중치 행렬을 셋팅해서 3층 신경망 중에 1층까지 구현하시오 
+
+
+# 0. 필요한 함수 불러옵니다.
+
+def sigmoid(x):
+    return 1 / (1+np.exp(-x) )
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+# 1. 신경망이 필요한 가중치와 바이어스를 가져옵니다.
+
+import pickle
+
+def init_network():
+    with open("sample_weight.pkl", "rb") as f:
+        network = pickle.load(f)
+    return network
+
+network = init_network()
+w1, w2, w3 = network['W1'], network['W2'], network['W3']
+b1, b2, b3 = network['b1'], network['b2'] , network['b3']
+
+# 2. mnist 데이터를 불러옵니다.
+
+from dataset.mnist import load_mnist
+( x_train, t_train ) , ( x_test, t_test ) = load_mnist( flatten = True, normalize = True )
+
+# 3. 신경망을 구성합니다.
+
+# 0층 (입력층)
+x = x_train[0:10]          # 일단 10개의 필기체 데이터를 가져옵니다.
+
+# 1층 (은닉층)
+
+y = np.dot(x,w1) + b1
+y_hat = sigmoid(y)
+print(y_hat)
+
+# 2층 (은닉층)
+
+# 3층 (출력층)
+
+
+
+w1.shape -------> (784,50)
+w2.shape -------> (50,100)
+w3.shape -------> (100,10)
+
+ex ) 수지 & 설현 사진을 분류하고 싶다면 출력층의 뉴런의 갯수 = 2
+
+
+*중간에 뉴런의 수는 아무 상관없다.
+
+문제 69. 은닉 2층 코드를 구현하세요 !
+
+# 2층 (은닉층)
+
+z = np.dot(y_hat,w2) + b2
+z_hat = sigmoid(z)
+print(z_hat)
+print(z_hat.shape)       # ( 10,100 ) , 필기체 10개만 가져왔기때문에 
+
+# 3층 
+
+
+*
+입력층 -------------> 은닉 1층 -------------> 은닉 2층 --------------> 출력층
+(10,784)    (784,50)                   (50,100)                       (100,10)                
+
+w1.shape -------> (784,50)
+w2.shape -------> (50,100)
+w3.shape -------> (100,10)
+
+
+### 마지막 출력층(3층) 을 구현하시오 !
+
+출력층의 함수 ? 1. 회귀 : 항등함수
+				2.분류 : 소프트맥스 함수
+
+# 3층 (출력층)
+
+k = np.dot(z_hat,w3) + b3
+k_hat = softmax(k)
+print(k_hat)
+print(k_hat.shape)        # (10,10)
+
+*
+
+
+# 예측값 /정답 출력
+a = np.argmax(k_hat, axis=1)         # 예측값 ,  [5 0 4 1 9 2 1 3 1 4]
+print(a)
+
+b = t_train[0:10]             # 정답 10개 , [5 0 4 1 9 2 1 3 1 4]
+print(b)
+
+### 100개의 필기체 데이터를 3층 신경망에 넣고 정확도를 확인하시오 !
+
+
+# 0. 필요한 함수 불러옵니다.
+
+def sigmoid(x):
+    return 1 / (1+np.exp(-x) )
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+# 1. 신경망이 필요한 가중치와 바이어스를 가져옵니다.
+
+import pickle
+
+def init_network():
+    with open("sample_weight.pkl", "rb") as f:
+        network = pickle.load(f)
+    return network
+
+network = init_network()
+w1, w2, w3 = network['W1'], network['W2'], network['W3']
+b1, b2, b3 = network['b1'], network['b2'] , network['b3']
+
+# 2. mnist 데이터를 불러옵니다.
+
+from dataset.mnist import load_mnist
+( x_train, t_train ) , ( x_test, t_test ) = load_mnist( flatten = True, normalize = True )
+
+# 3. 신경망을 구성합니다.
+
+# 0층 (입력층)
+x = x_train[0:100]          # 일단 10개의 필기체 데이터를 가져옵니다.
+
+# 1층 (은닉층)
+
+y = np.dot(x,w1) + b1
+y_hat = sigmoid(y)
+# print(y_hat)
+
+# 2층 (은닉층)
+
+z = np.dot(y_hat,w2) + b2
+z_hat = sigmoid(z)
+# print(z_hat)
+# print(z_hat.shape)
+
+# 3층 (출력층)
+
+k = np.dot(z_hat,w3) + b3
+k_hat = softmax(k)
+# print(k_hat)
+# print(k_hat.shape)
+
+
+# 예측값 /정답 출력
+a = np.argmax(k_hat, axis=1)         # 예측값
+
+b = t_train[0:100]             # 정답 100개
+
+print( sum(a==b) )        # 96
+    
+■ 배치처리 p102 
+
+훈련 데이터가 6만장이나 되므로 6만장을 한번에 신경망에 넣고 학습시키게 되면
+컴퓨터도 메모리 사용량이 초과해서 수행되지 않는다고 하면서 수행이 되지 않습니다.
+
+사람이 책을 볼때도 한번에 책 한권(60000페이지) 을 동시에 볼 수 없고 한번에 한 페이지씩
+보듯이 컴퓨터도 마찬가지로 메모리가 허용하는내에서 여러 페이지를 학습할 수 있다.
+
+한번에 100페이지씩 보면서 학습하겠금 배치단위로 학습시키는 것을 배치처리라고 합니다.
+
+     입력값           w1
+   (60000, 784) @ (784, 50)
+
+학습을 시킬려고 하면 메모리 초과가 나오면서 학습되지 않습니다.
+그래서 배치단위로 100개씩 학습시키는 것을 배치단위 학습이라 합니다.
+
+
+
+
+
+
+
