@@ -1,0 +1,130 @@
+
+22/01/04
+
+▩ 오차함수 
+
+앞에서 배웠던 신경망에 들어가는 함수 ? 시그모이드, 렐루, 소프트맥스 함수
+
+오차함수란 ? 
+예상값과 실제값과의 오차를 신경망에 역전파 시켜주기 위해서 필요한 함수
+
+신경망이 뭘 잘못하고 있는지 깨닫게 해주는 함수
+
+오차함수의 종류 2가지 ?
+
+	1. 평균 제곱 오차함수( mean squared error ) : 회귀분석할때 사용
+	2. 교차 엔트로피 오차함수( cross entropy error ) : 분류문제를 풀때 사용
+
+
+
+## 단층신경망의 행렬의 내적을 구현해서 k 행렬을 출력하시오 !
+
+import numpy as np
+input = np.array([0.6, 0.9]).reshape(1,2)
+w1 = np.array([0.4,0.7,0.9,0.2,0.3,0.1]).reshape(2,3)
+
+k = np.dot(input, w1)
+print(k)           # [[0.42 0.69 0.63]]
+
+## 위의 k 행렬의 값을 softmax 함수에 통과 시켜서 결과를 y 에 담고 출력하시오 !
+
+def softmax(a):
+    C = np.max(a)
+    minus = a - C
+    exp_a = np.exp(minus)                # 분자
+    sum_exp_a = np.sum(exp_a)         # 분모
+    y = exp_a / sum_exp_a
+    return y
+
+y = softmax(k)
+
+print( y )      # [[0.28219551 0.36966608 0.34813841]]
+
+※ 설명 : 실제 정답은 아이린 [0 0 1] 인데 수지로 예측하고 있는 결과가 출력되고 있으므로
+		오차를 신경망에 전달(오차 역전파)해 줘야합니다.
+
+## 교차엔트로피 함수를 생성하시오  ( 책 115 )
+
+def cross_entropy(y ,t):
+    delta = 1e-7          # 0.00000001       # 0에 가까운 아주 작은수
+    return -np.sum( t*np.log(y+delta) )
+
+# 아주 작은 수를 더한 이유는 ?
+y 가 0이 되면 마이너스 무한대가 되기때문에 
+마이너스 무한대 값이 출력되지 않도록 아주 작은 값을 더했습니다.
+
+## 아래의 정답행렬인 t 와 문제 95번에서 출력된 확률벡터 y와의 오차를 출력하시오 !
+
+t = np.array([0,0,1]).reshape(1,3)
+
+def cross_entropy(y ,t):
+    delta = 1e-7          # 0.00000001       # 0에 가까운 아주 작은수
+    return -np.sum( t*np.log(y+delta) )
+
+print( cross_entropy(y,t) )       # 1.0551548687114343
+
+## 위의 오차함수는 텐써플로우 2.0 에서는 어떻게 사용하고 있는가 ?
+
+https://cafe.daum.net/oracleoracle/Shyl/210
+
+# 3. 모델을 구성합니다.
+
+from  tensorflow.keras.models  import  Sequential
+from  tensorflow.keras.layers    import  Dense
+
+model = Sequential()
+model.add(Dense(128, activation='relu', input_shape=(784, ) ) ) # 은닉1층
+model.add(Dense( 10, activation='softmax') ) 
+
+# 4. 모델을 설정합니다. (경사하강법과 오차함수를 정의해줍니다. 4장에서 배웁니다)
+
+model.compile(optimizer='adam',  # 경사하강법 
+                     loss='categorical_crossentropy',  #오차함수
+                     metrics=['acc'] )  # 학습과정에서 정확도를 보려고 지정
+
+※ 
+이진분류 : binary_crossentropy
+다중분류 : categorical_crossentropy
+
+※ 신경망으로 풀고자 하는 문제
+
+	1. 분류 ----> 교차엔트로피 함수
+	2. 회귀 ----> 평균제곱오차 함수
+
+▩ 평균제곱 오차 함수 
+
+E = 1/2 * Σ(예측 - 정답)^2
+
+## 식을 보고 평균제곱오차함수를 생성하시오 
+
+def mean_squared_error(y,t):
+    return 0.5 * np.sum( (y-t)**2 )
+
+y = np.array( [0.1, 0.05, 0.6, 0.0, 0.05, 0.1, 0.0 , 0.1,0.0, 0.0] )      # 예측숫자 2
+t = np.array([0,0,1,0,0,0,0,0,0,0])      # 정답숫자 2
+
+print( mean_squared_error( y, t ) )      # 0.09750000000000003
+
+## 숫자 7로 예측한 결과와 정답 숫자 2와의 오차를 구하시오 !
+
+y = np.array( [0.1, 0.05, 0.1, 0.0, 0.05, 0.1, 0.0 , 0.6,0.0, 0.0] )      # 예측숫자 7
+t = np.array([0,0,1,0,0,0,0,0,0,0])      # 정답숫자 2
+
+print( mean_squared_error( y, t ) )      # 0.5975
+
+## 위의 평균제곱 오차함수를 텐써플로우에서는 어떻게 사용하는가 ?
+
+model.compile(optimizer='adam',  # 경사하강법 
+                     loss='mse',  #오차함수
+                     metrics=['acc'] )  # 학습과정에서 정확도를 보려고 지정
+
+*정리하면 우리가 신경망을 통해서 예측하고자 하는 문제에 따라서 오차함수를 다르게 사용
+
+	1. 분류 : loss='categorical_crossentropy'
+	2. 회귀 : loss ='mse'
+
+
+
+
+
+
