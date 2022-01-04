@@ -10,10 +10,11 @@
 - AND 게이트 퍼셉트론을 텐써 플로우로 구현하기
 - XOR 게이트 퍼셉트론을 텐써 플로우로 구현하기
 
-### 3층 신경망
+### 신경망
 
 - 퍼셉트론에서 신경망으로
 - 활성화 함수 (sigmoid, step, ReLU)
+- 오차함수 ( mean squared error, cross entropy error )
 - 다차원 배열의 계산
 - 3층 신경망 구현
 - 출력층 설계
