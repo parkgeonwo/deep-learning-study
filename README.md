@@ -1,5 +1,6 @@
 # deep-learning-study
 딥러닝 기초부터 Tensorflow, pytorch등을 사용한 딥러닝
+밑바닥부터 시작하는 딥러닝 1권 참고
 
 
 
